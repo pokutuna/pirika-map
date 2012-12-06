@@ -15,7 +15,7 @@ RESULT_MAX = 10000
 
 class Pirika < ActiveRecord::Base
   def to_h
-    { :datetime => datetime, :lat => latitude, :lon => longitude, :key => key }
+    { :datetime => datetime, :lat => latitude, :lng => longitude, :key => key }
   end
 end
 
@@ -27,8 +27,7 @@ get '/api' do
   lat = [params['latNE'], params['latSW']]
   lon = [params['lonNE'], params['lonSW']]
 
-  data = Pirika.where(
-    ':min_lat <= latitude AND latitude <= :max_lat AND :min_lon <= longitude AND :max_lon <= longitude', { :min_lat => lat.min, :max_lat => lat.max, :min_lon => lon.min, :max_lon => lon.max }).limit(RESULT_MAX)
+  data = Pirika.where(':min_lat <= latitude AND latitude <= :max_lat AND :min_lon <= longitude AND longitude <= :max_lon', { :min_lat => lat.min, :max_lat => lat.max, :min_lon => lon.min, :max_lon => lon.max }).limit(RESULT_MAX)
 
   results = {
     :request => params['request'],
