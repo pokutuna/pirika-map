@@ -3,7 +3,7 @@ var Pirika = {
   init: function(){
     console.log('init');
     this.map = new google.maps.Map($('#map')[0], {
-      zoom: 15, center: this.defaultCenter, mapTypeId: google.maps.MapTypeId.ROADMAP
+      zoom: 17, center: this.defaultCenter, mapTypeId: google.maps.MapTypeId.ROADMAP
     });
     google.maps.event.addListener(this.map, 'idle', this.updatePirika);
   },
