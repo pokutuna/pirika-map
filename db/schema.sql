@@ -9,3 +9,6 @@ CREATE TABLE pirikas (
   key integer,
   address text
 );
+
+DROP INDEX gps IF EXISTS gps;
+CREATE INDEX gps on pirikas(latitude, longitude);
