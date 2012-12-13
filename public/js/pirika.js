@@ -3,21 +3,20 @@ var Pirika = {
   init: function(){
     console.log('init');
     this.map = new google.maps.Map($('#map')[0], {
-      zoom: 15, center: this.defaultCenter, mapTypeId: google.maps.MapTypeId.ROADMAP
+      zoom: 15, center: this.defaultCenter, mapTypeId: google.maps.MapTypeId.SATELLITE
     });
     google.maps.event.addListener(this.map, 'idle', this.update);
   },
 
   map: undefined,
-  markers: [],
+  markers: {}, // put flag
   lastRequest: undefined,
   putTimer: undefined,
 
-  defaultCenter: new google.maps.LatLng(35.661214, 139.719521), // tokyo station
+  defaultCenter: new google.maps.LatLng(35.661214, 139.719521),
 
   update: function() {
-    console.log('idle');
-    Pirika.removeMarkers();
+    // Pirika.removeMarkers();
     var $data = Pirika.getPirikasApi(Pirika.map.getBounds());
     $data.success(Pirika.handleApiResult);
   },
@@ -49,8 +48,13 @@ var Pirika = {
     var marker = new google.maps.Marker({
       map: this.map,
       draggable: false,
-      animation: google.maps.Animation.DROP,
-      position: new google.maps.LatLng(data.lat, data.lng)
+      // animation: google.maps.Animation.DROP,
+      position: new google.maps.LatLng(data.lat, data.lng),
+      icon: {
+        strokeColor: 'white',
+        path: google.maps.SymbolPath.CIRCLE,
+        scale: 1
+      }
     });
     return marker;
   },
@@ -62,9 +66,11 @@ var Pirika = {
       if (!Pirika.putTimer || !(i < size)) return;
       for (var j = 0; j < 5; j++) {
         if (!data[i]) break;
-        var marker = Pirika.makeMaker(data[i]);
-        Pirika.markers.push(marker);
-        marker.setMap(Pirika.map);
+        if (!Pirika.markers[data[i].key]) {
+          var marker = Pirika.makeMaker(data[i]);
+          Pirika.markers[data[i].key] = true;
+          marker.setMap(Pirika.map);
+        }
         i++;
       }
       Pirika.putTimer = setTimeout(callback, 1);
