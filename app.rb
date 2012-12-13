@@ -8,7 +8,8 @@ require 'json'
 DB_NAME = 'pirikas.db'
 ActiveRecord::Base.establish_connection(
   :adapter  => 'sqlite3',
-  :database => File.join(File.dirname(__FILE__), 'db', DB_NAME)
+  :database => File.join(File.dirname(__FILE__), 'db', DB_NAME),
+  :pool     => 10
   )
 
 PAGE_LIMIT = 500
