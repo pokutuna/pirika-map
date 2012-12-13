@@ -3,38 +3,41 @@ var Pirika = {
   init: function(){
     console.log('init');
     this.map = new google.maps.Map($('#map')[0], {
-      zoom: 17, center: this.defaultCenter, mapTypeId: google.maps.MapTypeId.ROADMAP
+      zoom: 15, center: this.defaultCenter, mapTypeId: google.maps.MapTypeId.ROADMAP
     });
-    google.maps.event.addListener(this.map, 'idle', this.updatePirika);
+    google.maps.event.addListener(this.map, 'idle', this.update);
   },
 
   map: undefined,
   markers: [],
   lastRequest: undefined,
+  putTimer: undefined,
 
-  defaultCenter: new google.maps.LatLng(35.681382, 139.766084), // tokyo station
+  defaultCenter: new google.maps.LatLng(35.661214, 139.719521), // tokyo station
 
-  updatePirika: function() {
+  update: function() {
     console.log('idle');
-    var $data = Pirika.getPirikas(Pirika.map.getBounds());
-    $data.success(function(res) {
-      console.log(res.size);
-      Pirika.removeMarkers();
-      if (Pirika.lastRequest == res.request) {
-        for (var i = 0; i < res.size; i++) {
-          Pirika.markers.push(Pirika.makeMaker(res.data[i]));
-        }
-        Pirika.putMarkers();
-      }
-    });
+    Pirika.removeMarkers();
+    var $data = Pirika.getPirikasApi(Pirika.map.getBounds());
+    $data.success(Pirika.handleApiResult);
   },
 
-  getPirikas: function(bounds) {
+  handleApiResult: function(res) {
+    console.log(res.size);
+    if (Pirika.lastRequest == res.request) {
+      if (res.hasNext) Pirika.getPirikasApi(Pirika.map.getBounds(), res.page + 1).success(Pirika.handleApiResult);
+      Pirika.putMarkers(res.data);
+    }
+  },
+
+  getPirikasApi: function(bounds, page) {
+    if (!page) page = 0;
     var requestTime = (new Date()).getTime();
     this.lastRequest = requestTime;
 
     return $.getJSON('/api', {
       request: requestTime,
+      page   : page,
       latNE  : bounds.getNorthEast().lat(),
       lonNE  : bounds.getNorthEast().lng(),
       latSW  : bounds.getSouthWest().lat(),
@@ -46,19 +49,31 @@ var Pirika = {
     var marker = new google.maps.Marker({
       map: this.map,
       draggable: false,
+      animation: google.maps.Animation.DROP,
       position: new google.maps.LatLng(data.lat, data.lng)
     });
     return marker;
   },
 
-  putMarkers: function() {
-    // TODO use setTimeout
-    for (var i = 0; i < this.markers.length; i++) {
-      this.markers[i].setMap(this.map);
-    }
+  putMarkers: function(data) {
+    var i = 0, size = data.length;
+    Pirika.putTimer = true;
+    setTimeout(function callback() {
+      if (!Pirika.putTimer || !(i < size)) return;
+      for (var j = 0; j < 5; j++) {
+        if (!data[i]) break;
+        var marker = Pirika.makeMaker(data[i]);
+        Pirika.markers.push(marker);
+        marker.setMap(Pirika.map);
+        i++;
+      }
+      Pirika.putTimer = setTimeout(callback, 1);
+    }, 1);
   },
 
   removeMarkers: function() {
+    clearTimeout(Pirika.putTimer);
+    Pirika.putTimer = false;
     for (var i = 0; i < this.markers.length; i++) {
       this.markers[i].setMap(null);
     }
